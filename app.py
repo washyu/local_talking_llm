@@ -8,7 +8,7 @@ from rich.console import Console
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
 from langchain.prompts import PromptTemplate
-from langchain_community.llms import Ollama
+from langchain_community.llms.ollama import Ollama
 from tts import TextToSpeechService
 
 console = Console()
@@ -31,9 +31,11 @@ chain = ConversationChain(
     prompt=PROMPT,
     verbose=False,
     memory=ConversationBufferMemory(ai_prefix="Assistant:"),
-    llm=Ollama(),
+    llm=Ollama(
+        model="samantha-mistral:latest",
+        base_url="http://192.168.50.198:11434",
+    ),
 )
-
 
 def record_audio(stop_event, data_queue):
     """
@@ -137,7 +139,7 @@ if __name__ == "__main__":
 
                 with console.status("Generating response...", spinner="earth"):
                     response = get_llm_response(text)
-                    sample_rate, audio_array = tts.long_form_synthesize(response)
+                    sample_rate, audio_array = tts.long_form_synthesize(response, "v2/en_speaker_9")
 
                 console.print(f"[cyan]Assistant: {response}")
                 play_audio(sample_rate, audio_array)

@@ -38,10 +38,10 @@ class TextToSpeechService:
         inputs = self.processor(text, voice_preset=voice_preset, return_tensors="pt")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
+        audio_array = None
         with torch.no_grad():
-            audio_array = self.model.generate(**inputs, pad_token_id=10000)
-
-        audio_array = audio_array.cpu().numpy().squeeze()
+            audio_tensor = self.model.generate(**inputs, pad_token_id=10000)
+            audio_array = audio_tensor.cpu().numpy().squeeze()
         sample_rate = self.model.generation_config.sample_rate
         return sample_rate, audio_array
 
