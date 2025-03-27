@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'docker:dind'
-            args '--privileged'
-        }
-    }
+    agent any
     
     environment {
         DOCKER_HOST = 'aiserver'
@@ -13,34 +8,32 @@ pipeline {
     }
     
     stages {
-        stage('Start Docker Daemon') {
-            steps {
-                sh '''
-                # Start Docker daemon
-                dockerd-entrypoint.sh &
-                sleep 10
-                
-                # Check if Docker is running
-                docker info
-                '''
-            }
-        }
-        
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
         
-        // Rest of your stages remain the same
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh "docker build -t ${DOCKER_HOST}:5000/${IMAGE_NAME}:${IMAGE_TAG} ."
-                }
+                sh "docker build -t ${DOCKER_HOST}:5000/${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
         
-        // ... other stages
+        stage('Push Docker Image') {
+            steps {
+                sh "docker push ${DOCKER_HOST}:5000/${IMAGE_NAME}:${IMAGE_TAG}"
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                sh """
+                docker stop ${IMAGE_NAME} || true
+                docker rm ${IMAGE_NAME} || true
+                docker run -d --name ${IMAGE_NAME} -p 8000:8000 ${DOCKER_HOST}:5000/${IMAGE_NAME}:${IMAGE_TAG}
+                """
+            }
+        }
     }
 }
