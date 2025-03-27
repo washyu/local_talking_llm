@@ -1,6 +1,6 @@
 pipeline {
     agent {
-            docker {
+        docker {
             image 'docker:dind'
             args '--privileged -v /var/run/docker.sock:/var/run/docker.sock'
         }
@@ -13,6 +13,19 @@ pipeline {
     }
     
     stages {
+        stage('Start Docker Daemon') {
+            steps {
+                sh '''
+                # Start Docker daemon
+                dockerd-entrypoint.sh &
+                sleep 10
+                
+                # Check if Docker is running
+                docker info
+                '''
+            }
+        }
+        
         stage('Checkout') {
             steps {
                 checkout scm
